@@ -1,4 +1,4 @@
-package insert
+package chroma
 
 type Insert struct{}
 
