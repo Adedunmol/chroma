@@ -1,12 +1,13 @@
-package chroma_test
+package insert_test
 
 import (
+	insert "github.com/Adedunmol/chroma"
 	"reflect"
 	"testing"
 )
 
 func TestParseInsert(t *testing.T) {
-	oplog = []byte(`{
+	oplog := []byte(`{
 		"op": "i",
 		"ns": "test.student",
 		"o":  {
@@ -18,11 +19,11 @@ func TestParseInsert(t *testing.T) {
 		},
 	}`)
 
-	got, err := Parse(oplog)
+	got, err := insert.Parse(oplog)
 	if err != nil {
 	}
 
-	wanted := Insert{}
+	wanted := insert.Insert{}
 
 	if !reflect.DeepEqual(got, wanted) {
 		t.Errorf("got %#v want %#v", got, wanted)
