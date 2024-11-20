@@ -2,8 +2,11 @@ package chroma
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 )
+
+var UnknownOp = errors.New("unknown op")
 
 type Oplog struct {
 	Op        string                 `json:"op"`
@@ -19,8 +22,15 @@ func ParseJSON(oplog []byte) (Oplog, error) {
 		return result, fmt.Errorf("error parsing oplog as JSON: %w", err)
 	}
 
-	if result.Op == "i" {
+	switch result.Op {
+	case "i":
 		result.Op = "insert"
+		break
+	case "u":
+		result.Op = "update"
+		break
+	default:
+		return result, fmt.Errorf("%w: %s", UnknownOp, result.Op)
 	}
 
 	return result, nil
