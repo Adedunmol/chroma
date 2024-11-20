@@ -22,7 +22,12 @@ var NamespaceError = errors.New("invalid structure for namespace")
 
 var namespace = regexp.MustCompile("(\\w+)\\.(\\w+)")
 
-func Parse(data []byte) (Insert, error) {
+func NewInsert() Insert {
+
+	return Insert{}
+}
+
+func (i *Insert) Parse(data []byte) (Insert, error) {
 	var insert Insert
 	oplog, err := ParseJSON(data)
 	if err != nil {
@@ -36,20 +41,9 @@ func Parse(data []byte) (Insert, error) {
 	}
 	insert.Database = match[1]
 	insert.Table = match[2]
-	insert.Columns = getColumns(oplog)
+	insert.Columns = insert.getColumns(oplog)
 
 	return insert, nil
-}
-
-func getColumns(oplog Oplog) []KeyValue {
-	var result []KeyValue
-
-	for key, value := range oplog.Object {
-		data := KeyValue{Key: key, Value: value}
-		result = append(result, data)
-	}
-
-	return result
 }
 
 func (i *Insert) String() string {
@@ -68,4 +62,15 @@ func (i *Insert) String() string {
 	insertStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", i.Table, columnsStr, valuesStr)
 
 	return insertStr
+}
+
+func (i *Insert) getColumns(oplog Oplog) []KeyValue {
+	var result []KeyValue
+
+	for key, value := range oplog.Object {
+		data := KeyValue{Key: key, Value: value}
+		result = append(result, data)
+	}
+
+	return result
 }

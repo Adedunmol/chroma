@@ -19,7 +19,8 @@ func TestParseInsert(t *testing.T) {
 		}
 	}`)
 
-	got, err := chroma.Parse(oplog)
+	insert := chroma.NewInsert()
+	got, err := insert.Parse(oplog)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +55,8 @@ func TestStringInsert(t *testing.T) {
 		}
 	}`)
 
-	result, err := chroma.Parse(oplog)
+	insert := chroma.NewInsert()
+	result, err := insert.Parse(oplog)
 	if err != nil {
 		t.Fatal(err)
 	}
