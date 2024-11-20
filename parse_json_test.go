@@ -23,19 +23,33 @@ func TestParseJSON(t *testing.T) {
 	if err != nil {
 	}
 
-	wanted := chroma.Oplog{
+	want := chroma.Oplog{
 		Op:        "insert",
 		Namespace: "test.student",
 		Object: map[string]interface{}{
 			"_id":           "635b79e231d82a8ab1de863b",
 			"name":          "John Doe",
-			"roll_no":       51,
+			"roll_no":       float64(51),
 			"is_graduated":  false,
 			"date_of_birth": "2000-01-30",
 		},
 	}
 
-	if !reflect.DeepEqual(got, wanted) {
-		t.Errorf("got %#v want %#v", got, wanted)
+	assertEqual(t, got.Op, want.Op)
+	assertEqual(t, got.Namespace, want.Namespace)
+	assertObjectEqual(t, got.Object, want.Object)
+}
+
+func assertEqual(t *testing.T, got, want string) {
+	t.Helper()
+	if got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
+}
+
+func assertObjectEqual(t *testing.T, got, want map[string]interface{}) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }

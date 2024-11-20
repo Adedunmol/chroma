@@ -6,9 +6,9 @@ import (
 )
 
 type Oplog struct {
-	Op        string      `json:"op"`
-	Namespace string      `json:"ns"`
-	Object    interface{} `json:"o"`
+	Op        string                 `json:"op"`
+	Namespace string                 `json:"ns"`
+	Object    map[string]interface{} `json:"o"`
 }
 
 func ParseJSON(oplog []byte) (Oplog, error) {
