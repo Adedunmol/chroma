@@ -1,8 +1,52 @@
 package chroma
 
-type Insert struct{}
+import (
+	"errors"
+	"fmt"
+	"regexp"
+)
 
-func Parse(oplog []byte) (Insert, error) {
+type KeyValue struct {
+	Key   string
+	Value interface{}
+}
 
-	return Insert{}, nil
+type Insert struct {
+	Database string
+	Table    string
+	Columns  []KeyValue
+}
+
+var NamespaceError = errors.New("invalid structure for namespace")
+
+var namespace = regexp.MustCompile("(\\w+)\\.(\\w+)")
+
+func Parse(data []byte) (Insert, error) {
+	var insert Insert
+	oplog, err := ParseJSON(data)
+	if err != nil {
+		return Insert{}, fmt.Errorf("error parsing JSON: %s", err)
+	}
+
+	match := namespace.FindStringSubmatch(oplog.Namespace)
+
+	if len(match) != 3 {
+		return Insert{}, NamespaceError
+	}
+	insert.Database = match[1]
+	insert.Table = match[2]
+	insert.Columns = getColumns(oplog)
+
+	return insert, nil
+}
+
+func getColumns(oplog Oplog) []KeyValue {
+	var result []KeyValue
+
+	for key, value := range oplog.Object {
+		data := KeyValue{Key: key, Value: value}
+		result = append(result, data)
+	}
+
+	return result
 }
