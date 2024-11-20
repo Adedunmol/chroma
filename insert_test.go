@@ -40,3 +40,30 @@ func TestParseInsert(t *testing.T) {
 		t.Errorf("got %#v want %#v", got, wanted)
 	}
 }
+
+func TestStringInsert(t *testing.T) {
+	oplog := []byte(`{
+		"op": "i",
+		"ns": "test.student",
+		"o":  {
+			"_id": "635b79e231d82a8ab1de863b",
+			"name": "John Doe",
+			"roll_no": 51,
+			"is_graduated": false,
+			"date_of_birth": "2000-01-30"
+		}
+	}`)
+
+	result, err := chroma.Parse(oplog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := result.String()
+
+	want := "INSERT INTO student (_id, name, roll_no, is_graduated, date_of_birth) VALUES (635b79e231d82a8ab1de863b, John Doe, 51, false, 2000-01-30)"
+
+	if len(got) != len(want) {
+		t.Errorf("got %d, want %d", len(got), len(want))
+	}
+}

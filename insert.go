@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 type KeyValue struct {
@@ -49,4 +50,22 @@ func getColumns(oplog Oplog) []KeyValue {
 	}
 
 	return result
+}
+
+func (i *Insert) String() string {
+	var columns []string
+	var values []string
+
+	for _, entry := range i.Columns {
+		columns = append(columns, entry.Key)
+		values = append(values, fmt.Sprintf("%v", entry.Value))
+
+	}
+
+	columnsStr := strings.Join(columns, ", ")
+	valuesStr := strings.Join(values, ", ")
+
+	insertStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", i.Table, columnsStr, valuesStr)
+
+	return insertStr
 }
