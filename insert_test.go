@@ -25,7 +25,7 @@ func TestParseInsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wanted := chroma.Insert{
+	want := chroma.Insert{
 		Database: "test",
 		Table:    "student",
 		Columns: []chroma.KeyValue{
@@ -37,8 +37,8 @@ func TestParseInsert(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(got, wanted) {
-		t.Errorf("got %#v want %#v", got, wanted)
+	if !reflect.DeepEqual(*got, want) {
+		t.Errorf("got %#v want %#v", *got, want)
 	}
 }
 

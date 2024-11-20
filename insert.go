@@ -28,23 +28,23 @@ func NewInsert() Insert {
 	return Insert{}
 }
 
-func (i *Insert) Parse(data []byte) (Insert, error) {
-	var insert Insert
+func (i *Insert) Parse(data []byte) (*Insert, error) {
+
 	oplog, err := ParseJSON(data)
 	if err != nil {
-		return Insert{}, fmt.Errorf("error parsing JSON: %s", err)
+		return i, fmt.Errorf("error parsing JSON: %s", err)
 	}
 
 	match := namespace.FindStringSubmatch(oplog.Namespace)
 
 	if len(match) != 3 {
-		return Insert{}, NamespaceError
+		return i, NamespaceError
 	}
-	insert.Database = match[1]
-	insert.Table = match[2]
-	insert.Columns = insert.getColumns(oplog)
+	i.Database = match[1]
+	i.Table = match[2]
+	i.Columns = i.getColumns(oplog)
 
-	return insert, nil
+	return i, nil
 }
 
 func (i *Insert) String() string {
