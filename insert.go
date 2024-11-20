@@ -18,9 +18,10 @@ type Insert struct {
 	Columns  []KeyValue
 }
 
-var NamespaceError = errors.New("invalid structure for namespace")
-
-var namespace = regexp.MustCompile("(\\w+)\\.(\\w+)")
+var (
+	NamespaceError = errors.New("invalid structure for namespace")
+	namespace      = regexp.MustCompile("(\\w+)\\.(\\w+)")
+)
 
 func NewInsert() Insert {
 
