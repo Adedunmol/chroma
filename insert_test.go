@@ -19,8 +19,13 @@ func TestParseInsert(t *testing.T) {
 		}
 	}`)
 
+	data, err := chroma.ParseJSONMap(oplog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	insert := chroma.NewInsert()
-	got, err := insert.Parse(oplog)
+	got, err := insert.Parse(data)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,8 +60,13 @@ func TestStringInsert(t *testing.T) {
 		}
 	}`)
 
+	data, err := chroma.ParseJSONMap(oplog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	insert := chroma.NewInsert()
-	result, err := insert.Parse(oplog)
+	result, err := insert.Parse(data)
 	if err != nil {
 		t.Fatal(err)
 	}

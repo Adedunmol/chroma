@@ -28,14 +28,15 @@ func NewInsert() Insert {
 	return Insert{}
 }
 
-func (i *Insert) Parse(data []byte) (*Insert, error) {
+func (i *Insert) Parse(data map[string]interface{}) (*Insert, error) {
 
-	oplog, err := ParseJSON(data)
-	if err != nil {
-		return i, fmt.Errorf("error parsing JSON: %s", err)
-	}
+	ns := getNamespace(data)
 
-	match, err := extractNamespace(oplog.Namespace)
+	//if err != nil {
+	//	return i, fmt.Errorf("error parsing JSON: %s", err)
+	//}
+
+	match, err := extractNamespace(ns)
 
 	if err != nil {
 		return i, err
@@ -43,7 +44,7 @@ func (i *Insert) Parse(data []byte) (*Insert, error) {
 
 	i.Database = match[1]
 	i.Table = match[2]
-	i.Columns = i.getColumns(oplog)
+	i.Columns = i.getColumns(data)
 
 	return i, nil
 }
@@ -76,13 +77,30 @@ func extractNamespace(ns string) ([]string, error) {
 	return match, nil
 }
 
-func (i *Insert) getColumns(oplog Oplog) []KeyValue {
+func (i *Insert) getColumns(data map[string]interface{}) []KeyValue {
+
 	var result []KeyValue
 
-	for key, value := range oplog.Object {
+	object, ok := data["o"]
+
+	if !ok {
+		return result
+	}
+
+	for key, value := range object.(map[string]interface{}) {
 		data := KeyValue{Key: key, Value: value}
 		result = append(result, data)
 	}
 
 	return result
+}
+
+func getNamespace(data map[string]interface{}) string {
+
+	ns, exists := data["ns"]
+	if !exists {
+		return ""
+	}
+
+	return ns.(string)
 }
