@@ -35,3 +35,29 @@ func ParseJSON(oplog []byte) (Oplog, error) {
 
 	return result, nil
 }
+
+func ParseJSONMap(oplog []byte) (map[string]interface{}, error) {
+	var dest map[string]interface{}
+	err := json.Unmarshal(oplog, &dest)
+
+	if err != nil {
+		return map[string]interface{}{}, fmt.Errorf("error parsing oplog as JSON: %w", err)
+	}
+
+	if len(dest) < 3 {
+		return map[string]interface{}{}, fmt.Errorf("wrong structure")
+	}
+
+	switch dest["op"] {
+	case "i":
+		dest["op"] = "insert"
+		break
+	case "u":
+		dest["op"] = "update"
+		break
+	default:
+		return map[string]interface{}{}, fmt.Errorf("%w: %s", UnknownOp, dest["op"])
+	}
+
+	return dest, nil
+}

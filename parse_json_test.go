@@ -101,6 +101,99 @@ func TestParseJSON(t *testing.T) {
 	})
 }
 
+func TestParseJSONMap(t *testing.T) {
+
+	t.Run("check parsing of insert", func(t *testing.T) {
+		oplog := []byte(`{
+		"op": "i",
+		"ns": "test.student",
+		"o": {
+			"_id": "635b79e231d82a8ab1de863b",
+			"name": "John Doe",
+			"roll_no": 51,
+			"is_graduated": false,
+			"date_of_birth": "2000-01-30"
+		}
+	}`)
+		got, err := chroma.ParseJSONMap(oplog)
+		if err != nil {
+		}
+
+		want := map[string]interface{}{
+			"op": "insert",
+			"ns": "test.student",
+			"o": map[string]interface{}{
+				"_id":           "635b79e231d82a8ab1de863b",
+				"name":          "John Doe",
+				"roll_no":       float64(51),
+				"is_graduated":  false,
+				"date_of_birth": "2000-01-30",
+			},
+		}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("check parsing of update", func(t *testing.T) {
+		oplog := []byte(`{
+		"op": "u",
+		"ns": "test.student",
+		"o": {
+			"_id": "635b79e231d82a8ab1de863b",
+			"name": "John Doe",
+			"roll_no": 51,
+			"is_graduated": false,
+			"date_of_birth": "2000-01-30"
+		}
+		}`)
+
+		got, err := chroma.ParseJSONMap(oplog)
+		if err != nil {
+		}
+
+		want := map[string]interface{}{
+			"op": "update",
+			"ns": "test.student",
+			"o": map[string]interface{}{
+				"_id":           "635b79e231d82a8ab1de863b",
+				"name":          "John Doe",
+				"roll_no":       float64(51),
+				"is_graduated":  false,
+				"date_of_birth": "2000-01-30",
+			},
+		}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("check parsing of unknown operation", func(t *testing.T) {
+		oplog := []byte(`{
+		"op": "g",
+		"ns": "test.student",
+		"o": {
+			"_id": "635b79e231d82a8ab1de863b",
+			"name": "John Doe",
+			"roll_no": 51,
+			"is_graduated": false,
+			"date_of_birth": "2000-01-30"
+		}
+		}`)
+
+		_, err := chroma.ParseJSONMap(oplog)
+		if err == nil {
+			t.Errorf("expected an error")
+		}
+
+		if !errors.Is(err, chroma.UnknownOp) {
+			t.Errorf("got unexpected error: %v", err)
+		}
+	})
+}
+
 func assertEqual(t *testing.T, got, want string) {
 	t.Helper()
 	if got != want {

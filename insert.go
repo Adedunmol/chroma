@@ -35,11 +35,12 @@ func (i *Insert) Parse(data []byte) (*Insert, error) {
 		return i, fmt.Errorf("error parsing JSON: %s", err)
 	}
 
-	match := namespace.FindStringSubmatch(oplog.Namespace)
+	match, err := extractNamespace(oplog.Namespace)
 
-	if len(match) != 3 {
-		return i, NamespaceError
+	if err != nil {
+		return i, err
 	}
+
 	i.Database = match[1]
 	i.Table = match[2]
 	i.Columns = i.getColumns(oplog)
@@ -63,6 +64,16 @@ func (i *Insert) String() string {
 	insertStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", i.Table, columnsStr, valuesStr)
 
 	return insertStr
+}
+
+func extractNamespace(ns string) ([]string, error) {
+	match := namespace.FindStringSubmatch(ns)
+
+	if len(match) != 3 {
+		return match, NamespaceError
+	}
+
+	return match, nil
 }
 
 func (i *Insert) getColumns(oplog Oplog) []KeyValue {
