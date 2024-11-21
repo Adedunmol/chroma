@@ -138,15 +138,19 @@ func TestParseJSONMap(t *testing.T) {
 
 	t.Run("check parsing of update", func(t *testing.T) {
 		oplog := []byte(`{
-		"op": "u",
-		"ns": "test.student",
-		"o": {
-			"_id": "635b79e231d82a8ab1de863b",
-			"name": "John Doe",
-			"roll_no": 51,
-			"is_graduated": false,
-			"date_of_birth": "2000-01-30"
-		}
+			"op": "u",
+			"ns": "test.student",
+			"o":  {
+				"$v": 2,
+				"diff": {
+					"d": {
+						"roll_no": false
+					}
+				}
+			},
+			"o2": {
+				"_id": "635b79e231d82a8ab1de863b"
+			}
 		}`)
 
 		got, err := chroma.ParseJSONMap(oplog)
@@ -157,11 +161,15 @@ func TestParseJSONMap(t *testing.T) {
 			"op": "update",
 			"ns": "test.student",
 			"o": map[string]interface{}{
-				"_id":           "635b79e231d82a8ab1de863b",
-				"name":          "John Doe",
-				"roll_no":       float64(51),
-				"is_graduated":  false,
-				"date_of_birth": "2000-01-30",
+				"$v": float64(2),
+				"diff": map[string]interface{}{
+					"d": map[string]interface{}{
+						"roll_no": false,
+					},
+				},
+			},
+			"o2": map[string]interface{}{
+				"_id": "635b79e231d82a8ab1de863b",
 			},
 		}
 
