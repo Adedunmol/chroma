@@ -24,8 +24,8 @@ func TestParseInsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	insert := chroma.NewInsert()
-	got, err := insert.Parse(data)
+	got := chroma.NewInsert()
+	err = got.Parse(data)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,8 +42,8 @@ func TestParseInsert(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(*got, want) {
-		t.Errorf("got %#v want %#v", *got, want)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %#v want %#v", got, want)
 	}
 }
 
@@ -66,12 +66,12 @@ func TestStringInsert(t *testing.T) {
 	}
 
 	insert := chroma.NewInsert()
-	result, err := insert.Parse(data)
+	err = insert.Parse(data)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got := result.String()
+	got := insert.String()
 
 	want := "INSERT INTO student (_id, name, roll_no, is_graduated, date_of_birth) VALUES (635b79e231d82a8ab1de863b, John Doe, 51, false, 2000-01-30)"
 

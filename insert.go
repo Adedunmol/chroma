@@ -28,21 +28,21 @@ func NewInsert() Insert {
 	return Insert{}
 }
 
-func (i *Insert) Parse(data map[string]interface{}) (*Insert, error) {
+func (i *Insert) Parse(data map[string]interface{}) error {
 
 	ns := getNamespace(data)
 
 	match, err := extractNamespace(ns)
 
 	if err != nil {
-		return i, err
+		return err
 	}
 
 	i.Database = match[1]
 	i.Table = match[2]
 	i.Columns = i.getColumns(data)
 
-	return i, nil
+	return nil
 }
 
 func (i *Insert) String() string {

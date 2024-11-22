@@ -19,14 +19,14 @@ func NewUpdate() Update {
 	return Update{}
 }
 
-func (u *Update) Parse(data map[string]interface{}) (*Update, error) {
+func (u *Update) Parse(data map[string]interface{}) error {
 
 	ns := getNamespace(data)
 
 	match, err := extractNamespace(ns)
 
 	if err != nil {
-		return u, err
+		return err
 	}
 
 	u.Database = match[1]
@@ -34,7 +34,7 @@ func (u *Update) Parse(data map[string]interface{}) (*Update, error) {
 
 	op, err := getOperation(data)
 	if err != nil {
-		return u, err
+		return err
 	}
 
 	u.Op = op
@@ -44,11 +44,11 @@ func (u *Update) Parse(data map[string]interface{}) (*Update, error) {
 	query, err := u.getCondition(data)
 
 	if err != nil {
-		return u, err
+		return err
 	}
 	u.Condition = query
 
-	return u, nil
+	return nil
 }
 
 func (u *Update) String() string {

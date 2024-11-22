@@ -25,13 +25,13 @@ func TestUpdate(t *testing.T) {
 		}
 	}`)
 
-		update := chroma.NewUpdate()
+		got := chroma.NewUpdate()
 		data, err := chroma.ParseJSONMap(oplog)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		got, err := update.Parse(data)
+		err = got.Parse(data)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -44,8 +44,8 @@ func TestUpdate(t *testing.T) {
 			Condition: chroma.KeyValue{Key: "_id", Value: "635b79e231d82a8ab1de863b"},
 		}
 
-		if !reflect.DeepEqual(*got, want) {
-			t.Errorf("got %#v want %#v", *got, want)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %#v want %#v", got, want)
 		}
 	})
 
@@ -67,13 +67,13 @@ func TestUpdate(t *testing.T) {
 		}
 	}`)
 
-		update := chroma.NewUpdate()
+		got := chroma.NewUpdate()
 		data, err := chroma.ParseJSONMap(oplog)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		got, err := update.Parse(data)
+		err = got.Parse(data)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -86,8 +86,8 @@ func TestUpdate(t *testing.T) {
 			Condition: chroma.KeyValue{Key: "_id", Value: "635b79e231d82a8ab1de863b"},
 		}
 
-		if !reflect.DeepEqual(*got, want) {
-			t.Errorf("got %#v want %#v", *got, want)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %#v want %#v", got, want)
 		}
 	})
 }
@@ -117,12 +117,12 @@ func TestUpdateString(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		result, err := update.Parse(data)
+		err = update.Parse(data)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		got := result.String()
+		got := update.String()
 
 		want := "UPDATE student SET is_graduated = true WHERE _id = 635b79e231d82a8ab1de863b"
 
@@ -155,12 +155,12 @@ func TestUpdateString(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		result, err := update.Parse(data)
+		err = update.Parse(data)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		got := result.String()
+		got := update.String()
 
 		want := "UPDATE student SET roll_no = NULL WHERE _id = 635b79e231d82a8ab1de863b"
 
