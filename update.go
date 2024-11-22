@@ -56,17 +56,24 @@ func (u *Update) String() string {
 	var updateStr string
 
 	for _, c := range u.Columns {
-		columns = append(columns, fmt.Sprintf("%s = %s", c.Key, c.Value))
+		if u.Op == "u" {
+			columns = append(columns, fmt.Sprintf("%s = %v", c.Key, c.Value))
+		} else {
+			val := c.Value.(bool)
+			var value string
+
+			if !val {
+				value = "NULL"
+			}
+
+			columns = append(columns, fmt.Sprintf("%s = %s", c.Key, value))
+		}
 	}
 
 	columnsStr := strings.Join(columns, ", ")
 	conditionStr := fmt.Sprintf("%s = %s", u.Condition.Key, u.Condition.Value)
 
-	if u.Op == "u" {
-		updateStr = fmt.Sprintf("UPDATE %s SET %s WHERE %s", u.Table, columnsStr, conditionStr)
-	} else {
-		updateStr = fmt.Sprintf("UPDATE %s SET %s WHERE %s", u.Table, columnsStr, conditionStr)
-	}
+	updateStr = fmt.Sprintf("UPDATE %s SET %s WHERE %s", u.Table, columnsStr, conditionStr)
 
 	return updateStr
 }
