@@ -55,6 +55,9 @@ func ParseJSONMap(oplog []byte) (map[string]interface{}, error) {
 	case "u":
 		dest["op"] = "update"
 		break
+	case "d":
+		dest["op"] = "delete"
+		break
 	default:
 		return map[string]interface{}{}, fmt.Errorf("%w: %s", UnknownOp, dest["op"])
 	}
