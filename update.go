@@ -127,7 +127,7 @@ func (u *Update) getColumns(data map[string]interface{}, operation string) []Key
 func (u *Update) getCondition(data map[string]interface{}) (KeyValue, error) {
 	condition, exists := data["o2"].(map[string]interface{})
 	if !exists {
-		return KeyValue{}, errors.New("no query found")
+		return KeyValue{}, errors.New("no condition found")
 	}
 
 	var result []KeyValue
@@ -136,7 +136,7 @@ func (u *Update) getCondition(data map[string]interface{}) (KeyValue, error) {
 		result = append(result, KeyValue{Key: key, Value: value})
 	}
 	if len(result) == 0 {
-		return KeyValue{}, errors.New("no query found")
+		return KeyValue{}, errors.New("no condition found")
 	}
 	return result[0], nil
 }
