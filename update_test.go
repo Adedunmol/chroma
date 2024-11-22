@@ -35,11 +35,11 @@ func TestUpdate(t *testing.T) {
 	}
 
 	want := chroma.Update{
-		Op:       "u",
-		Database: "test",
-		Table:    "student",
-		Column:   chroma.KeyValue{Key: "is_graduated", Value: true},
-		Query:    chroma.KeyValue{Key: "_id", Value: "635b79e231d82a8ab1de863b"},
+		Op:        "u",
+		Database:  "test",
+		Table:     "student",
+		Columns:   []chroma.KeyValue{{Key: "is_graduated", Value: true}},
+		Condition: chroma.KeyValue{Key: "_id", Value: "635b79e231d82a8ab1de863b"},
 	}
 
 	if !reflect.DeepEqual(*got, want) {

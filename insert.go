@@ -32,10 +32,6 @@ func (i *Insert) Parse(data map[string]interface{}) (*Insert, error) {
 
 	ns := getNamespace(data)
 
-	//if err != nil {
-	//	return i, fmt.Errorf("error parsing JSON: %s", err)
-	//}
-
 	match, err := extractNamespace(ns)
 
 	if err != nil {

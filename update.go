@@ -2,14 +2,16 @@ package chroma
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 )
 
 type Update struct {
-	Op       string
-	Database string
-	Table    string
-	Column   KeyValue
-	Query    KeyValue
+	Op        string
+	Database  string
+	Table     string
+	Columns   []KeyValue
+	Condition KeyValue
 }
 
 func NewUpdate() Update {
@@ -37,16 +39,36 @@ func (u *Update) Parse(data map[string]interface{}) (*Update, error) {
 
 	u.Op = op
 
-	u.Column = u.getColumns(data, u.Op)[0]
+	u.Columns = u.getColumns(data, u.Op)
 
-	query, err := u.getQuery(data)
+	query, err := u.getCondition(data)
 
 	if err != nil {
 		return u, err
 	}
-	u.Query = query
+	u.Condition = query
 
 	return u, nil
+}
+
+func (u *Update) String() string {
+	var columns []string
+	var updateStr string
+
+	for _, c := range u.Columns {
+		columns = append(columns, fmt.Sprintf("%s = %s", c.Key, c.Value))
+	}
+
+	columnsStr := strings.Join(columns, ", ")
+	conditionStr := fmt.Sprintf("%s = %s", u.Condition.Key, u.Condition.Value)
+
+	if u.Op == "u" {
+		updateStr = fmt.Sprintf("UPDATE %s SET %s WHERE %s", u.Table, columnsStr, conditionStr)
+	} else {
+		updateStr = fmt.Sprintf("UPDATE %s SET %s WHERE %s", u.Table, columnsStr, conditionStr)
+	}
+
+	return updateStr
 }
 
 func getOperation(data map[string]interface{}) (string, error) {
@@ -95,15 +117,15 @@ func (u *Update) getColumns(data map[string]interface{}, operation string) []Key
 	return result
 }
 
-func (u *Update) getQuery(data map[string]interface{}) (KeyValue, error) {
-	query, exists := data["o2"].(map[string]interface{})
+func (u *Update) getCondition(data map[string]interface{}) (KeyValue, error) {
+	condition, exists := data["o2"].(map[string]interface{})
 	if !exists {
 		return KeyValue{}, errors.New("no query found")
 	}
 
 	var result []KeyValue
 
-	for key, value := range query {
+	for key, value := range condition {
 		result = append(result, KeyValue{Key: key, Value: value})
 	}
 	if len(result) == 0 {
