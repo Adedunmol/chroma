@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 type KeyValue struct {
@@ -21,6 +22,9 @@ type Insert struct {
 var (
 	NamespaceError = errors.New("invalid structure for namespace")
 	namespace      = regexp.MustCompile("(\\w+)\\.(\\w+)")
+	tableCreated   = false
+	schemaCreated  = false
+	mutex          *sync.Mutex
 )
 
 func NewInsert() Insert {
@@ -99,4 +103,18 @@ func getNamespace(data map[string]interface{}) string {
 	}
 
 	return ns.(string)
+}
+
+func (i *Insert) createSchema() string {
+	mutex.Lock()
+	if !schemaCreated {
+		schemaCreated = true
+
+		schemaStr := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s;", i.Database)
+
+		return schemaStr
+	}
+	mutex.Unlock()
+
+	return ""
 }
