@@ -3,6 +3,7 @@ package chroma
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"sync"
@@ -20,6 +21,7 @@ type Insert struct {
 }
 
 var (
+	TypeError      = errors.New("unsupported type")
 	NamespaceError = errors.New("invalid structure for namespace")
 	namespace      = regexp.MustCompile("(\\w+)\\.(\\w+)")
 	tableCreated   = false
@@ -105,8 +107,8 @@ func getNamespace(data map[string]interface{}) string {
 	return ns.(string)
 }
 
-func (i *Insert) createSchema() string {
-	mutex.Lock()
+func (i *Insert) CreateSchema() string {
+	//mutex.Lock()
 	if !schemaCreated {
 		schemaCreated = true
 
@@ -114,7 +116,68 @@ func (i *Insert) createSchema() string {
 
 		return schemaStr
 	}
-	mutex.Unlock()
+	//mutex.Unlock()
 
 	return ""
+}
+
+func (i *Insert) CreateTable() (string, error) {
+	//mutex.Lock()
+	if !tableCreated {
+		tableCreated = true
+		tableStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n", i.Table)
+		columns, err := i.assembleColumns()
+		if err != nil {
+			return "", err
+		}
+		columnsStr := strings.Join(columns, "\n")
+
+		tableStr += columnsStr + "\n"
+
+		tableStr += ");"
+
+		return tableStr, nil
+	}
+	//mutex.Unlock()
+
+	return "", nil
+}
+
+func (i *Insert) assembleColumns() ([]string, error) {
+	var result []string
+
+	for idx, entry := range i.Columns {
+		var colEntry []string
+
+		colEntry = append(colEntry, "\t")
+		colEntry = append(colEntry, entry.Key)
+
+		switch reflect.TypeOf(entry.Value).Kind() {
+		case reflect.String:
+			colEntry = append(colEntry, "VARCHAR(255)")
+			break
+		case reflect.Int:
+			colEntry = append(colEntry, "BIGINT")
+		case reflect.Float64:
+			colEntry = append(colEntry, "FLOAT")
+		case reflect.Bool:
+			colEntry = append(colEntry, "BOOLEAN")
+		default:
+			return result, TypeError
+		}
+
+		if strings.Contains(entry.Key, "_id") {
+			colEntry = append(colEntry, "PRIMARY KEY")
+		}
+
+		col := strings.Join(colEntry, " ")
+
+		if idx != len(i.Columns)-1 {
+			col += ","
+		}
+
+		result = append(result, col)
+	}
+
+	return result, nil
 }

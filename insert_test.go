@@ -79,3 +79,81 @@ func TestStringInsert(t *testing.T) {
 		t.Errorf("got %d, want %d", len(got), len(want))
 	}
 }
+
+func TestCreateTable(t *testing.T) {
+	oplog := []byte(`{
+		"op": "i",
+		"ns": "test.student",
+		"o":  {
+			"_id": "635b79e231d82a8ab1de863b",
+			"name": "John Doe",
+			"roll_no": 51,
+			"is_graduated": false,
+			"date_of_birth": "2000-01-30"
+		}
+	}`)
+
+	data, err := chroma.ParseJSONMap(oplog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	insert := chroma.NewInsert()
+	err = insert.Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := insert.CreateTable()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `CREATE TABLE IF NOT EXISTS student (
+    	date_of_birth VARCHAR(255),
+		_id VARCHAR(255) PRIMARY KEY,
+		name VARCHAR(255),
+		roll_no FLOAT,
+		is_graduated BOOLEAN
+	);`
+
+	if len(got) != len(want) {
+		t.Errorf("got: %d want: %d", len(got), len(want))
+	}
+}
+
+func TestCreateSchema(t *testing.T) {
+	oplog := []byte(`{
+		"op": "i",
+		"ns": "test.student",
+		"o":  {
+			"_id": "635b79e231d82a8ab1de863b",
+			"name": "John Doe",
+			"roll_no": 51,
+			"is_graduated": false,
+			"date_of_birth": "2000-01-30"
+		}
+	}`)
+
+	data, err := chroma.ParseJSONMap(oplog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	insert := chroma.NewInsert()
+	err = insert.Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := insert.CreateSchema()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := "CREATE SCHEMA IF NOT EXISTS test;"
+
+	if got != want {
+		t.Errorf("got: %s want: %s", got, want)
+	}
+}
