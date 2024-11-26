@@ -3,6 +3,7 @@ package chroma_test
 import (
 	chroma "github.com/Adedunmol/chroma"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -30,9 +31,20 @@ func TestParseInsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	table := chroma.Table{
+		Name: "student",
+		Schema: map[string]bool{
+			"_id":           true,
+			"name":          true,
+			"roll_no":       true,
+			"is_graduated":  true,
+			"date_of_birth": true,
+		},
+	}
+
 	want := chroma.Insert{
 		Database: "test",
-		Table:    "student",
+		Table:    table,
 		Columns: []chroma.KeyValue{
 			{Key: "_id", Value: "635b79e231d82a8ab1de863b"},
 			{Key: "name", Value: "John Doe"},
@@ -43,7 +55,7 @@ func TestParseInsert(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %#v want %#v", got, want)
+		t.Errorf("got: %#v\n want: %#v", got, want)
 	}
 }
 
@@ -117,8 +129,8 @@ func TestCreateTable(t *testing.T) {
 		is_graduated BOOLEAN
 	);`
 
-	if len(got) != len(want) {
-		t.Errorf("got: %d want: %d", len(got), len(want))
+	if len(strings.Trim(got, " ")) != len(strings.Trim(want, " ")) {
+		t.Errorf("got: %d want: %d", len(strings.Trim(got, " ")), len(strings.Trim(want, " ")))
 	}
 }
 

@@ -14,10 +14,16 @@ type KeyValue struct {
 	Value interface{}
 }
 
+type Table struct {
+	Name   string
+	Schema map[string]bool
+}
+
 type Insert struct {
 	Database string
-	Table    string
+	Table    Table
 	Columns  []KeyValue
+	Diff     []string
 }
 
 var (
@@ -31,7 +37,7 @@ var (
 
 func NewInsert() Insert {
 
-	return Insert{}
+	return Insert{Table: Table{Schema: map[string]bool{}}}
 }
 
 func (i *Insert) Parse(data map[string]interface{}) error {
@@ -45,8 +51,20 @@ func (i *Insert) Parse(data map[string]interface{}) error {
 	}
 
 	i.Database = match[1]
-	i.Table = match[2]
-	i.Columns = i.getColumns(data)
+	i.Table.Name = match[2]
+	columns := i.getColumns(data)
+
+	if len(i.Table.Schema) != len(columns) {
+		diff := i.getDifference(i.Columns)
+		diffStr, err := i.assembleColumns(diff)
+		if err != nil {
+			return fmt.Errorf("could not assemble columns to alter table: %w", err)
+		}
+
+		i.Diff = diffStr
+	}
+
+	i.Columns = columns
 
 	return nil
 }
@@ -64,7 +82,13 @@ func (i *Insert) String() string {
 	columnsStr := strings.Join(columns, ", ")
 	valuesStr := strings.Join(values, ", ")
 
-	insertStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", i.Table, columnsStr, valuesStr)
+	insertStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", i.Table.Name, columnsStr, valuesStr)
+
+	if len(i.Diff) != 0 {
+		alterStr := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s;", i.Table.Name, strings.Join(i.Diff, " ")) + "\n"
+
+		insertStr += alterStr
+	}
 
 	return insertStr
 }
@@ -90,6 +114,7 @@ func (i *Insert) getColumns(data map[string]interface{}) []KeyValue {
 	}
 
 	for key, value := range object.(map[string]interface{}) {
+		i.Table.Schema[key] = true
 		data := KeyValue{Key: key, Value: value}
 		result = append(result, data)
 	}
@@ -125,8 +150,8 @@ func (i *Insert) CreateTable() (string, error) {
 	//mutex.Lock()
 	if !tableCreated {
 		tableCreated = true
-		tableStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n", i.Table)
-		columns, err := i.assembleColumns()
+		tableStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n", i.Table.Name)
+		columns, err := i.assembleColumns(i.Columns)
 		if err != nil {
 			return "", err
 		}
@@ -143,10 +168,10 @@ func (i *Insert) CreateTable() (string, error) {
 	return "", nil
 }
 
-func (i *Insert) assembleColumns() ([]string, error) {
+func (i *Insert) assembleColumns(columns []KeyValue) ([]string, error) {
 	var result []string
 
-	for idx, entry := range i.Columns {
+	for idx, entry := range columns {
 		var colEntry []string
 
 		colEntry = append(colEntry, "\t")
@@ -166,7 +191,7 @@ func (i *Insert) assembleColumns() ([]string, error) {
 			return result, TypeError
 		}
 
-		if strings.Contains(entry.Key, "_id") {
+		if entry.Key == "_id" {
 			colEntry = append(colEntry, "PRIMARY KEY")
 		}
 
@@ -180,4 +205,17 @@ func (i *Insert) assembleColumns() ([]string, error) {
 	}
 
 	return result, nil
+}
+
+func (i *Insert) getDifference(columns []KeyValue) []KeyValue {
+	var result []KeyValue
+
+	for _, entry := range columns {
+		if _, ok := i.Table.Schema[entry.Key]; !ok {
+			data := KeyValue{Key: entry.Key, Value: entry.Value}
+			result = append(result, data)
+		}
+	}
+
+	return result
 }
