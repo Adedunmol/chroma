@@ -77,7 +77,7 @@ func (i *Insert) String() string {
 		diff := i.getDifference(i.Columns)
 		diffStr, err := i.assembleColumns(diff)
 		if err != nil {
-			panic(fmt.Sprintf("could not assemble columns to alter table: %w", err))
+			panic(fmt.Errorf("could not assemble columns to alter table: %w", err))
 		}
 
 		i.Diff = diffStr

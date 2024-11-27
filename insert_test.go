@@ -31,20 +31,20 @@ func TestParseInsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	table := chroma.Table{
-		Name: "student",
-		Schema: map[string]bool{
-			"_id":           true,
-			"name":          true,
-			"roll_no":       true,
-			"is_graduated":  true,
-			"date_of_birth": true,
-		},
-	}
+	//table := chroma.Table{
+	//	Name: "student",
+	//	Schema: map[string]bool{
+	//		"_id":           true,
+	//		"name":          true,
+	//		"roll_no":       true,
+	//		"is_graduated":  true,
+	//		"date_of_birth": true,
+	//	},
+	//}
 
 	want := chroma.Insert{
 		Database: "test",
-		Table:    table,
+		Table:    "student",
 		Columns: []chroma.KeyValue{
 			{Key: "_id", Value: "635b79e231d82a8ab1de863b"},
 			{Key: "name", Value: "John Doe"},

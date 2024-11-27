@@ -2,7 +2,6 @@ package chroma_test
 
 import (
 	"errors"
-	"fmt"
 	chroma "github.com/Adedunmol/chroma"
 	"reflect"
 	"testing"
@@ -237,7 +236,34 @@ func TestParseArray(t *testing.T) {
 		t.Errorf("got unexpected error: %v", err)
 	}
 
-	fmt.Println(got)
+	want := []map[string]interface{}{
+		{
+			"op": "insert",
+			"ns": "test.student",
+			"o": map[string]interface{}{
+				"_id":           "635b79e231d82a8ab1de863b",
+				"name":          "Selena Miller",
+				"roll_no":       float64(51),
+				"is_graduated":  false,
+				"date_of_birth": "2000-01-30",
+			},
+		},
+		{
+			"op": "insert",
+			"ns": "test.student",
+			"o": map[string]interface{}{
+				"_id":           "14798c213f273a7ca2cf5174",
+				"name":          "George Smith",
+				"roll_no":       float64(21),
+				"is_graduated":  true,
+				"date_of_birth": "2001-03-23",
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
 }
 
 func assertEqual(t *testing.T, got, want string) {
