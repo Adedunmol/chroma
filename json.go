@@ -48,18 +48,10 @@ func ParseJSONMap(oplog []byte) (map[string]interface{}, error) {
 		return map[string]interface{}{}, fmt.Errorf("wrong structure")
 	}
 
-	switch dest["op"] {
-	case "i":
-		dest["op"] = "insert"
-		break
-	case "u":
-		dest["op"] = "update"
-		break
-	case "d":
-		dest["op"] = "delete"
-		break
-	default:
-		return map[string]interface{}{}, fmt.Errorf("%w: %s", UnknownOp, dest["op"])
+	err = validateOperation(dest)
+
+	if err != nil {
+		return map[string]interface{}{}, fmt.Errorf("error validating oplog as JSON: %w", err)
 	}
 
 	return dest, nil
@@ -73,5 +65,31 @@ func ParseJSONArray(oplog []byte) ([]map[string]interface{}, error) {
 		return []map[string]interface{}{}, fmt.Errorf("error parsing oplog as JSON: %w", err)
 	}
 
+	for _, oplog := range dest {
+		err = validateOperation(oplog)
+		if err != nil {
+			return []map[string]interface{}{}, fmt.Errorf("error validating oplog as JSON: %w for %v", err, oplog)
+		}
+	}
+
 	return dest, nil
+}
+
+func validateOperation(oplog map[string]interface{}) error {
+
+	switch oplog["op"] {
+	case "i":
+		oplog["op"] = "insert"
+		break
+	case "u":
+		oplog["op"] = "update"
+		break
+	case "d":
+		oplog["op"] = "delete"
+		break
+	default:
+		return fmt.Errorf("%w: %s", UnknownOp, oplog["op"])
+	}
+
+	return nil
 }
