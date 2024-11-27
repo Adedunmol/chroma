@@ -21,12 +21,13 @@ type Table struct {
 
 type Insert struct {
 	Database string
-	Table    Table
+	Table    string
 	Columns  []KeyValue
 	Diff     []string
 }
 
 var (
+	tables         map[string]Table
 	TypeError      = errors.New("unsupported type")
 	NamespaceError = errors.New("invalid structure for namespace")
 	namespace      = regexp.MustCompile("(\\w+)\\.(\\w+)")
@@ -37,7 +38,7 @@ var (
 
 func NewInsert() Insert {
 
-	return Insert{Table: Table{Schema: map[string]bool{}}}
+	return Insert{}
 }
 
 func (i *Insert) Parse(data map[string]interface{}) error {
@@ -51,18 +52,8 @@ func (i *Insert) Parse(data map[string]interface{}) error {
 	}
 
 	i.Database = match[1]
-	i.Table.Name = match[2]
+	i.Table = match[2]
 	columns := i.getColumns(data)
-
-	if len(i.Table.Schema) != len(columns) {
-		diff := i.getDifference(i.Columns)
-		diffStr, err := i.assembleColumns(diff)
-		if err != nil {
-			return fmt.Errorf("could not assemble columns to alter table: %w", err)
-		}
-
-		i.Diff = diffStr
-	}
 
 	i.Columns = columns
 
@@ -70,6 +61,28 @@ func (i *Insert) Parse(data map[string]interface{}) error {
 }
 
 func (i *Insert) String() string {
+
+	var preStatement []string
+	table, ok := tables[i.Table]
+
+	if !ok {
+		createdStr, err := i.CreateTable()
+		if err != nil {
+			panic(err)
+		}
+		preStatement = append(preStatement, createdStr)
+	}
+
+	if len(table.Schema) != len(i.Columns) {
+		diff := i.getDifference(i.Columns)
+		diffStr, err := i.assembleColumns(diff)
+		if err != nil {
+			panic(fmt.Sprintf("could not assemble columns to alter table: %w", err))
+		}
+
+		i.Diff = diffStr
+	}
+
 	var columns []string
 	var values []string
 
@@ -82,10 +95,10 @@ func (i *Insert) String() string {
 	columnsStr := strings.Join(columns, ", ")
 	valuesStr := strings.Join(values, ", ")
 
-	insertStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", i.Table.Name, columnsStr, valuesStr)
+	insertStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", i.Table, columnsStr, valuesStr)
 
 	if len(i.Diff) != 0 {
-		alterStr := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s;", i.Table.Name, strings.Join(i.Diff, " ")) + "\n"
+		alterStr := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s;", i.Table, strings.Join(i.Diff, " ")) + "\n"
 
 		insertStr += alterStr
 	}
@@ -113,8 +126,13 @@ func (i *Insert) getColumns(data map[string]interface{}) []KeyValue {
 		return result
 	}
 
+	table, ok := tables[i.Table]
+
+	if !ok {
+		panic("no table")
+	}
 	for key, value := range object.(map[string]interface{}) {
-		i.Table.Schema[key] = true
+		table.Schema[key] = true
 		data := KeyValue{Key: key, Value: value}
 		result = append(result, data)
 	}
@@ -150,7 +168,7 @@ func (i *Insert) CreateTable() (string, error) {
 	//mutex.Lock()
 	if !tableCreated {
 		tableCreated = true
-		tableStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n", i.Table.Name)
+		tableStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n", i.Table)
 		columns, err := i.assembleColumns(i.Columns)
 		if err != nil {
 			return "", err
@@ -210,8 +228,13 @@ func (i *Insert) assembleColumns(columns []KeyValue) ([]string, error) {
 func (i *Insert) getDifference(columns []KeyValue) []KeyValue {
 	var result []KeyValue
 
+	table, ok := tables[i.Table]
+
+	if !ok {
+		panic("no table")
+	}
 	for _, entry := range columns {
-		if _, ok := i.Table.Schema[entry.Key]; !ok {
+		if _, ok := table.Schema[entry.Key]; !ok {
 			data := KeyValue{Key: entry.Key, Value: entry.Value}
 			result = append(result, data)
 		}

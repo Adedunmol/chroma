@@ -64,3 +64,14 @@ func ParseJSONMap(oplog []byte) (map[string]interface{}, error) {
 
 	return dest, nil
 }
+
+func ParseJSONArray(oplog []byte) ([]map[string]interface{}, error) {
+	var dest []map[string]interface{}
+	err := json.Unmarshal(oplog, &dest)
+
+	if err != nil {
+		return []map[string]interface{}{}, fmt.Errorf("error parsing oplog as JSON: %w", err)
+	}
+
+	return dest, nil
+}

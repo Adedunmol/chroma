@@ -2,6 +2,7 @@ package chroma_test
 
 import (
 	"errors"
+	"fmt"
 	chroma "github.com/Adedunmol/chroma"
 	"reflect"
 	"testing"
@@ -200,6 +201,43 @@ func TestParseJSONMap(t *testing.T) {
 			t.Errorf("got unexpected error: %v", err)
 		}
 	})
+}
+
+func TestParseArray(t *testing.T) {
+
+	oplog := []byte(`
+	[
+		{
+    	"op": "i",
+    	"ns": "test.student",
+    	"o": {
+      		"_id": "635b79e231d82a8ab1de863b",
+      		"name": "Selena Miller",
+      		"roll_no": 51,
+      		"is_graduated": false,
+      		"date_of_birth": "2000-01-30"
+    		}
+  		},
+  		{
+		"op": "i",
+    	"ns": "test.student",
+    	"o": {
+      		"_id": "14798c213f273a7ca2cf5174",
+      		"name": "George Smith",
+      		"roll_no": 21,
+      		"is_graduated": true,
+      		"date_of_birth": "2001-03-23"
+    	}
+  	}
+	]
+`)
+
+	got, err := chroma.ParseJSONArray(oplog)
+	if err != nil {
+		t.Errorf("got unexpected error: %v", err)
+	}
+
+	fmt.Println(got)
 }
 
 func assertEqual(t *testing.T, got, want string) {
