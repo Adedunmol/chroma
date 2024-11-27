@@ -62,26 +62,7 @@ func (i *Insert) Parse(data map[string]interface{}) error {
 
 func (i *Insert) String() string {
 
-	var preStatement []string
-	table, ok := tables[i.Table]
-
-	if !ok {
-		createdStr, err := i.CreateTable()
-		if err != nil {
-			panic(err)
-		}
-		preStatement = append(preStatement, createdStr)
-	}
-
-	if len(table.Schema) != len(i.Columns) {
-		diff := i.getDifference(i.Columns)
-		diffStr, err := i.assembleColumns(diff)
-		if err != nil {
-			panic(fmt.Errorf("could not assemble columns to alter table: %w", err))
-		}
-
-		i.Diff = diffStr
-	}
+	preStatements := i.prependStatements()
 
 	var columns []string
 	var values []string
@@ -97,13 +78,41 @@ func (i *Insert) String() string {
 
 	insertStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", i.Table, columnsStr, valuesStr)
 
+	result := strings.Join(preStatements, "") + insertStr
+
+	return result
+}
+
+func (i *Insert) prependStatements() []string {
+	var preStatement []string
+
+	table, ok := tables[i.Table]
+
+	if !ok {
+		createdStr, err := i.CreateTable()
+		if err != nil {
+			panic(err)
+		}
+		preStatement = append(preStatement, createdStr+"\n")
+	}
+
+	if len(table.Schema) != len(i.Columns) {
+		diff := i.getDifference(i.Columns)
+		diffStr, err := i.assembleColumns(diff)
+		if err != nil {
+			panic(fmt.Errorf("could not assemble columns to alter table: %w", err))
+		}
+
+		i.Diff = diffStr
+	}
+
 	if len(i.Diff) != 0 {
 		alterStr := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s;", i.Table, strings.Join(i.Diff, " ")) + "\n"
 
-		insertStr += alterStr
+		preStatement = append(preStatement, alterStr+"\n")
 	}
 
-	return insertStr
+	return preStatement
 }
 
 func extractNamespace(ns string) ([]string, error) {
