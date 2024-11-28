@@ -83,7 +83,7 @@ func (i *Insert) String() string {
 }
 
 func (i *Insert) prependStatements() []string {
-	var preStatement []string
+	var preStatements []string
 
 	table, ok := tables[i.Table]
 
@@ -92,14 +92,14 @@ func (i *Insert) prependStatements() []string {
 		if err != nil {
 			panic(err)
 		}
-		preStatement = append(preStatement, createdStr+"\n")
+		preStatements = append(preStatements, createdStr+"\n")
 	}
 
 	if len(table.Schema) != len(i.Columns) {
 		diff := i.getDifference(i.Columns)
 		diffStr, err := i.assembleColumns(diff)
 		if err != nil {
-			panic(fmt.Errorf("could not assemble columns to alter table: %w", err))
+			panic(fmt.Errorf("could not assemble columns to alter table(%s): %w", i.Table, err))
 		}
 
 		i.Diff = diffStr
@@ -108,10 +108,10 @@ func (i *Insert) prependStatements() []string {
 	if len(i.Diff) != 0 {
 		alterStr := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s;", i.Table, strings.Join(i.Diff, " ")) + "\n"
 
-		preStatement = append(preStatement, alterStr+"\n")
+		preStatements = append(preStatements, alterStr+"\n")
 	}
 
-	return preStatement
+	return preStatements
 }
 
 func extractNamespace(ns string) ([]string, error) {
@@ -247,7 +247,7 @@ func (i *Insert) getDifference(columns []KeyValue) []KeyValue {
 	table, ok := tables[i.Table]
 
 	if !ok {
-		panic("no table")
+		panic(fmt.Sprintf("no table: %s", i.Table))
 	}
 	for _, entry := range columns {
 		if _, ok := table.Schema[entry.Key]; !ok {
