@@ -52,7 +52,7 @@ func (i *Insert) Parse(data map[string]interface{}) error {
 
 	i.Database = match[1]
 	i.Table = match[2]
-	columns := i.getColumns(data)
+	columns := i.getEntries(data)
 
 	i.Columns = columns
 
@@ -102,13 +102,11 @@ func (i *Insert) prependStatements() []string {
 			panic(fmt.Errorf("could not assemble columns to alter table(%s): %w", i.Table, err))
 		}
 
-		i.Diff = diffStr
-	}
+		if len(diffStr) != 0 {
+			alterStr := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s;", i.Table, strings.Join(i.Diff, " ")) + "\n"
 
-	if len(i.Diff) != 0 {
-		alterStr := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s;", i.Table, strings.Join(i.Diff, " ")) + "\n"
-
-		preStatements = append(preStatements, alterStr+"\n")
+			preStatements = append(preStatements, alterStr+"\n")
+		}
 	}
 
 	return preStatements
@@ -124,7 +122,7 @@ func extractNamespace(ns string) ([]string, error) {
 	return match, nil
 }
 
-func (i *Insert) getColumns(data map[string]interface{}) []KeyValue {
+func (i *Insert) getEntries(data map[string]interface{}) []KeyValue {
 
 	var result []KeyValue
 
@@ -134,13 +132,7 @@ func (i *Insert) getColumns(data map[string]interface{}) []KeyValue {
 		return result
 	}
 
-	table, ok := tables[i.Table]
-
-	if !ok {
-		panic("no table")
-	}
 	for key, value := range object.(map[string]interface{}) {
-		table.Schema[key] = true
 		data := KeyValue{Key: key, Value: value}
 		result = append(result, data)
 	}
@@ -159,7 +151,6 @@ func getNamespace(data map[string]interface{}) string {
 }
 
 func (i *Insert) CreateSchema() string {
-	//mutex.Lock()
 	if !schemaCreated {
 		schemaCreated = true
 
@@ -167,13 +158,11 @@ func (i *Insert) CreateSchema() string {
 
 		return schemaStr
 	}
-	//mutex.Unlock()
 
 	return ""
 }
 
 func (i *Insert) CreateTable() (string, error) {
-	//mutex.Lock()
 
 	_, ok := tables[i.Table]
 
@@ -197,7 +186,6 @@ func (i *Insert) CreateTable() (string, error) {
 
 		return tableStr, nil
 	}
-	//mutex.Unlock()
 
 	return "", nil
 }
