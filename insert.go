@@ -31,7 +31,6 @@ var (
 	TypeError      = errors.New("unsupported type")
 	NamespaceError = errors.New("invalid structure for namespace")
 	namespace      = regexp.MustCompile("(\\w+)\\.(\\w+)")
-	tableCreated   = false
 	schemaCreated  = false
 	mutex          *sync.Mutex
 )
@@ -175,8 +174,16 @@ func (i *Insert) CreateSchema() string {
 
 func (i *Insert) CreateTable() (string, error) {
 	//mutex.Lock()
-	if !tableCreated {
-		tableCreated = true
+
+	_, ok := tables[i.Table]
+
+	if !ok {
+		tables[i.Table] = Table{Name: i.Table, Schema: make(map[string]bool)}
+
+		for _, column := range i.Columns {
+			tables[i.Table].Schema[column.Key] = true
+		}
+
 		tableStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n", i.Table)
 		columns, err := i.assembleColumns(i.Columns)
 		if err != nil {
