@@ -28,10 +28,10 @@ type Insert struct {
 
 var (
 	tables         map[string]Table
+	schemas        map[string]bool
 	TypeError      = errors.New("unsupported type")
 	NamespaceError = errors.New("invalid structure for namespace")
 	namespace      = regexp.MustCompile("(\\w+)\\.(\\w+)")
-	schemaCreated  = false
 	mutex          *sync.Mutex
 )
 
@@ -88,11 +88,19 @@ func (i *Insert) prependStatements() []string {
 	table, ok := tables[i.Table]
 
 	if !ok {
-		createdStr, err := i.CreateTable()
+		createTableStr, err := i.CreateTable()
 		if err != nil {
 			panic(err)
 		}
-		preStatements = append(preStatements, createdStr+"\n")
+		preStatements = append(preStatements, createTableStr+"\n")
+	}
+
+	_, ok = schemas[i.Database]
+
+	if !ok {
+		schemaStr := i.CreateSchema()
+
+		preStatements = append(preStatements, schemaStr+"\n")
 	}
 
 	if len(table.Schema) != len(i.Columns) {
@@ -151,8 +159,10 @@ func getNamespace(data map[string]interface{}) string {
 }
 
 func (i *Insert) CreateSchema() string {
-	if !schemaCreated {
-		schemaCreated = true
+	_, ok := schemas[i.Database]
+
+	if !ok {
+		schemas[i.Database] = true
 
 		schemaStr := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s;", i.Database)
 
