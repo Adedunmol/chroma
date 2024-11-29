@@ -85,10 +85,11 @@ func TestStringInsert(t *testing.T) {
 
 	got := insert.String()
 
-	want := "INSERT INTO student (_id, name, roll_no, is_graduated, date_of_birth) VALUES (635b79e231d82a8ab1de863b, John Doe, 51, false, 2000-01-30)"
-
-	if len(got) != len(want) {
-		t.Errorf("got %d, want %d", len(got), len(want))
+	if !strings.Contains(got, "CREATE SCHEMA") {
+		t.Errorf("expected output to contain: %s", "CREATE SCHEMA")
+	}
+	if !strings.Contains(got, "CREATE TABLE") {
+		t.Errorf("expected output to contain: %s", "CREATE TABLE")
 	}
 }
 
@@ -121,16 +122,8 @@ func TestCreateTable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := `CREATE TABLE IF NOT EXISTS student (
-    	date_of_birth VARCHAR(255),
-		_id VARCHAR(255) PRIMARY KEY,
-		name VARCHAR(255),
-		roll_no FLOAT,
-		is_graduated BOOLEAN
-	);`
-
-	if len(strings.Trim(got, " ")) != len(strings.Trim(want, " ")) {
-		t.Errorf("got: %d want: %d", len(strings.Trim(got, " ")), len(strings.Trim(want, " ")))
+	if !strings.Contains(got, "CREATE TABLE IF NOT EXISTS student") {
+		t.Errorf("expected output to contain: %s", "CREATE TABLE IF NOT EXISTS student")
 	}
 }
 

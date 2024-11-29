@@ -27,8 +27,8 @@ type Insert struct {
 }
 
 var (
-	tables         map[string]Table
-	schemas        map[string]bool
+	tables         = make(map[string]Table)
+	schemas        = make(map[string]bool)
 	TypeError      = errors.New("unsupported type")
 	NamespaceError = errors.New("invalid structure for namespace")
 	namespace      = regexp.MustCompile("(\\w+)\\.(\\w+)")
@@ -85,6 +85,14 @@ func (i *Insert) String() string {
 func (i *Insert) prependStatements() []string {
 	var preStatements []string
 
+	_, ok := schemas[i.Database]
+
+	if !ok {
+		schemaStr := i.CreateSchema()
+
+		preStatements = append(preStatements, schemaStr+"\n")
+	}
+
 	table, ok := tables[i.Table]
 
 	if !ok {
@@ -93,14 +101,6 @@ func (i *Insert) prependStatements() []string {
 			panic(err)
 		}
 		preStatements = append(preStatements, createTableStr+"\n")
-	}
-
-	_, ok = schemas[i.Database]
-
-	if !ok {
-		schemaStr := i.CreateSchema()
-
-		preStatements = append(preStatements, schemaStr+"\n")
 	}
 
 	if len(table.Schema) != len(i.Columns) {
@@ -177,6 +177,7 @@ func (i *Insert) CreateTable() (string, error) {
 	_, ok := tables[i.Table]
 
 	if !ok {
+
 		tables[i.Table] = Table{Name: i.Table, Schema: make(map[string]bool)}
 
 		for _, column := range i.Columns {
