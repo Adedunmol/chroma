@@ -1,7 +1,7 @@
-package chroma_test
+package main_test
 
 import (
-	"github.com/Adedunmol/chroma"
+	chroma "github.com/Adedunmol/chroma"
 	"reflect"
 	"testing"
 )

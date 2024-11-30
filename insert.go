@@ -1,4 +1,4 @@
-package chroma
+package main
 
 import (
 	"errors"

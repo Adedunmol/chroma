@@ -1,4 +1,4 @@
-package chroma_test
+package main_test
 
 import (
 	chroma "github.com/Adedunmol/chroma"
