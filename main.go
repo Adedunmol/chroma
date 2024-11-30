@@ -64,3 +64,43 @@ func openFile(fileSystem fs.FS, name string) ([]byte, error) {
 
 	return data, nil
 }
+
+func separateOperations(oplogs []map[string]interface{}) []Handler {
+	var handlers []Handler
+
+	for _, oplog := range oplogs {
+		switch oplog["op"] {
+		case "insert":
+			insert := NewInsert()
+			err := insert.Parse(oplog)
+
+			if err != nil {
+				panic(err)
+			}
+			handlers = append(handlers, &insert)
+			break
+		case "update":
+			update := NewUpdate()
+			err := update.Parse(oplog)
+
+			if err != nil {
+				panic(err)
+			}
+			handlers = append(handlers, &update)
+			break
+		case "delete":
+			delete := NewDelete()
+			err := delete.Parse(oplog)
+
+			if err != nil {
+				panic(err)
+			}
+			handlers = append(handlers, &delete)
+			break
+		default:
+			panic(fmt.Errorf("unknown oplog type: %s", oplog["op"]))
+		}
+	}
+
+	return handlers
+}
