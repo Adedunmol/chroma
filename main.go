@@ -43,6 +43,17 @@ func main() {
 }
 
 func run(options Options) error {
+	fileData, err := openFile(os.DirFS("."), options.Input)
+	if err != nil {
+		return err
+	}
+
+	oplogs, err := ParseJSONArray(fileData)
+	if err != nil {
+		return err
+	}
+
+	_ = separateOperations(oplogs)
 
 	return nil
 }
