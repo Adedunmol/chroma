@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 )
 
@@ -41,5 +43,24 @@ func main() {
 }
 
 func run(options Options) error {
+
 	return nil
+}
+
+func openFile(fileSystem fs.FS, name string) ([]byte, error) {
+	file, err := fileSystem.Open(name)
+
+	defer file.Close()
+
+	if err != nil {
+		return nil, fmt.Errorf("error opening file %s: %w", name, err)
+	}
+
+	data, err := io.ReadAll(file)
+
+	if err != nil {
+		return nil, fmt.Errorf("error reading file %s: %w", name, err)
+	}
+
+	return data, nil
 }
