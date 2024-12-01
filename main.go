@@ -53,7 +53,7 @@ func run(options Options) error {
 		return err
 	}
 
-	_ = separateOperations(oplogs)
+	_ = SeparateOperations(oplogs)
 
 	return nil
 }
@@ -76,7 +76,7 @@ func openFile(fileSystem fs.FS, name string) ([]byte, error) {
 	return data, nil
 }
 
-func separateOperations(oplogs []map[string]interface{}) []Handler {
+func SeparateOperations(oplogs []map[string]interface{}) []Handler {
 	var handlers []Handler
 
 	for _, oplog := range oplogs {

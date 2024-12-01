@@ -94,7 +94,10 @@ func TestStringInsert(t *testing.T) {
 }
 
 func TestCreateTable(t *testing.T) {
-	oplog := []byte(`{
+
+	t.Run("create table", func(t *testing.T) {
+
+		oplog := []byte(`{
 		"op": "i",
 		"ns": "test.student",
 		"o":  {
@@ -106,29 +109,63 @@ func TestCreateTable(t *testing.T) {
 		}
 	}`)
 
-	data, err := chroma.ParseJSONMap(oplog)
-	if err != nil {
-		t.Fatal(err)
-	}
+		data, err := chroma.ParseJSONMap(oplog)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	insert := chroma.NewInsert()
-	err = insert.Parse(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+		insert := chroma.NewInsert()
+		err = insert.Parse(data)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	got, err := insert.CreateTable()
-	if err != nil {
-		t.Fatal(err)
-	}
+		got, err := insert.CreateTable()
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if !strings.Contains(got, "CREATE TABLE IF NOT EXISTS student") {
-		t.Errorf("expected output to contain: %s", "CREATE TABLE IF NOT EXISTS student")
-	}
+		if !strings.Contains(got, "CREATE TABLE IF NOT EXISTS student") {
+			t.Errorf("expected output to contain: %s", "CREATE TABLE IF NOT EXISTS student")
+		}
+	})
+
+	t.Run("create table on first insert", func(t *testing.T) {
+
+		oplog := []byte(`{
+		"op": "i",
+		"ns": "test.student",
+		"o":  {
+			"_id": "635b79e231d82a8ab1de863b",
+			"name": "John Doe",
+			"roll_no": 51,
+			"is_graduated": false,
+			"date_of_birth": "2000-01-30"
+		}
+	}`)
+
+		data, err := chroma.ParseJSONMap(oplog)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		insert := chroma.NewInsert()
+		err = insert.Parse(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_ = insert.String()
+
+		if !chroma.GetTable("student") {
+			t.Errorf("should have found table: %s", "student")
+		}
+	})
 }
 
 func TestCreateSchema(t *testing.T) {
-	oplog := []byte(`{
+	t.Run("create schema", func(t *testing.T) {
+		oplog := []byte(`{
 		"op": "i",
 		"ns": "test.student",
 		"o":  {
@@ -140,25 +177,56 @@ func TestCreateSchema(t *testing.T) {
 		}
 	}`)
 
-	data, err := chroma.ParseJSONMap(oplog)
-	if err != nil {
-		t.Fatal(err)
-	}
+		data, err := chroma.ParseJSONMap(oplog)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	insert := chroma.NewInsert()
-	err = insert.Parse(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+		insert := chroma.NewInsert()
+		err = insert.Parse(data)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	got := insert.CreateSchema()
-	if err != nil {
-		t.Fatal(err)
-	}
+		got := insert.CreateSchema()
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	want := "CREATE SCHEMA IF NOT EXISTS test;"
+		want := "CREATE SCHEMA IF NOT EXISTS test;"
 
-	if got != want {
-		t.Errorf("got: %s want: %s", got, want)
-	}
+		if got != want {
+			t.Errorf("got: %s want: %s", got, want)
+		}
+	})
+
+	t.Run("create schema on first insert", func(t *testing.T) {
+		oplog := []byte(`{
+		"op": "i",
+		"ns": "test.student",
+		"o":  {
+			"_id": "635b79e231d82a8ab1de863b",
+			"name": "John Doe",
+			"roll_no": 51,
+			"is_graduated": false,
+			"date_of_birth": "2000-01-30"
+		}
+	}`)
+
+		data, err := chroma.ParseJSONMap(oplog)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		insert := chroma.NewInsert()
+		err = insert.Parse(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = insert.String()
+
+		if !chroma.GetSchema("test") {
+			t.Errorf("should have found schema: %s", "test")
+		}
+	})
 }

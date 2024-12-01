@@ -35,6 +35,26 @@ var (
 	mutex          *sync.Mutex
 )
 
+func GetTable(name string) bool {
+	_, ok := tables[name]
+
+	if !ok {
+		return false
+	}
+
+	return true
+}
+
+func GetSchema(name string) bool {
+	_, ok := schemas[name]
+
+	if !ok {
+		return false
+	}
+
+	return true
+}
+
 func NewInsert() Insert {
 
 	return Insert{}
