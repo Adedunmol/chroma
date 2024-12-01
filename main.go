@@ -14,13 +14,15 @@ type Handler interface {
 }
 
 var (
-	input  = flag.String("i", "", "input file")
-	output = flag.String("o", "", "output file")
+	input      = flag.String("i", "", "input file")
+	output     = flag.String("o", "", "output file")
+	concurrent = flag.Int("c", 1, "concurrent goroutines")
 )
 
 type Options struct {
-	Input  string
-	Output string
+	Input      string
+	Output     string
+	Concurrent int
 }
 
 func usage() {
@@ -37,7 +39,7 @@ func main() {
 		usage()
 	}
 
-	if err := run(Options{Input: *input, Output: *output}); err != nil {
+	if err := run(Options{Input: *input, Output: *output, Concurrent: *concurrent}); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
