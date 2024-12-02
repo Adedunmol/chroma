@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -13,16 +14,19 @@ type Handler interface {
 	String() string
 }
 
+const WOKRERS uint8 = 10
+
 var (
-	input      = flag.String("i", "", "input file")
-	output     = flag.String("o", "", "output file")
-	concurrent = flag.Int("c", 1, "concurrent goroutines")
+	NoFileFound = errors.New("no file found")
+	input       = flag.String("i", "", "input file")
+	output      = flag.String("o", "", "output file")
+	concurrent  = flag.Bool("c", true, "concurrent goroutines")
 )
 
 type Options struct {
 	Input      string
 	Output     string
-	Concurrent int
+	Concurrent bool
 }
 
 func usage() {
@@ -45,6 +49,15 @@ func main() {
 }
 
 func run(options Options) error {
+
+	if options.Output == "" {
+		return NoFileFound
+	}
+
+	if options.Input == "" {
+		return NoFileFound
+	}
+
 	fileData, err := openFile(os.DirFS("."), options.Input)
 	if err != nil {
 		return err
