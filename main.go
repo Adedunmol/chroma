@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"sync"
 )
 
 type Handler interface {
@@ -14,9 +15,10 @@ type Handler interface {
 	String() string
 }
 
-const WOKRERS uint8 = 10
+const WOKRERS = 5
 
 var (
+	wg          sync.WaitGroup
 	NoFileFound = errors.New("no file found")
 	input       = flag.String("i", "", "input file")
 	output      = flag.String("o", "", "output file")
@@ -46,16 +48,20 @@ func main() {
 	if err := run(Options{Input: *input, Output: *output, Concurrent: *concurrent}); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
+
+	wg.Wait()
 }
 
 func run(options Options) error {
+	opsChan := make(chan Handler, WOKRERS)
+	queryOutputChan := make(chan string)
 
 	if options.Output == "" {
 		return NoFileFound
 	}
 
 	if options.Input == "" {
-		return NoFileFound
+		options.Input = "output.sql"
 	}
 
 	fileData, err := openFile(os.DirFS("."), options.Input)
@@ -68,7 +74,24 @@ func run(options Options) error {
 		return err
 	}
 
-	_ = SeparateOperations(oplogs)
+	ops := SeparateOperations(oplogs)
+
+	fileHandle, err := os.Create(options.Output)
+	if err != nil {
+		return err
+	}
+
+	wg.Add(1)
+	go writeOutputQuery(fileHandle, queryOutputChan)
+
+	wg.Add(WOKRERS)
+	for i := 0; i < WOKRERS; i++ {
+		go worker(opsChan, queryOutputChan)
+	}
+
+	for _, op := range ops {
+		opsChan <- op
+	}
 
 	return nil
 }
@@ -129,4 +152,23 @@ func SeparateOperations(oplogs []map[string]interface{}) []Handler {
 	}
 
 	return handlers
+}
+
+func worker(ops chan Handler, output chan string) {
+	defer wg.Done()
+	for op := range ops {
+		result := op.String()
+		output <- result
+	}
+
+}
+
+func writeOutputQuery(file *os.File, queryChan chan string) {
+	defer wg.Done()
+	for query := range queryChan {
+		_, err := file.WriteString(query + "\n")
+		if err != nil {
+			panic(err)
+		}
+	}
 }
