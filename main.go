@@ -15,20 +15,18 @@ type Handler interface {
 	String() string
 }
 
-const WOKRERS = 5
+const WORKERS = 5
 
 var (
 	wg          sync.WaitGroup
 	NoFileFound = errors.New("no file found")
 	input       = flag.String("i", "", "input file")
 	output      = flag.String("o", "", "output file")
-	concurrent  = flag.Bool("c", true, "concurrent goroutines")
 )
 
 type Options struct {
-	Input      string
-	Output     string
-	Concurrent bool
+	Input  string
+	Output string
 }
 
 func usage() {
@@ -45,16 +43,16 @@ func main() {
 		usage()
 	}
 
-	if err := run(Options{Input: *input, Output: *output, Concurrent: *concurrent}); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	if err := run(Options{Input: *input, Output: *output}); err != nil {
+		fmt.Fprintln(os.Stderr, errors.Unwrap(err))
 	}
 
 	wg.Wait()
 }
 
 func run(options Options) error {
-	opsChan := make(chan Handler, WOKRERS)
-	queryOutputChan := make(chan string)
+	opsChan := make(chan map[string]interface{}, WORKERS*2)
+	queryOutputChan := make(chan string, WORKERS*2)
 
 	if options.Output == "" {
 		return NoFileFound
@@ -69,14 +67,12 @@ func run(options Options) error {
 		return err
 	}
 
-	oplogs, err := ParseJSONArray(fileData)
+	fileHandle, err := os.Create(options.Output)
 	if err != nil {
 		return err
 	}
 
-	ops := SeparateOperations(oplogs)
-
-	fileHandle, err := os.Create(options.Output)
+	oplogs, err := ParseJSONArray(fileData)
 	if err != nil {
 		return err
 	}
@@ -84,12 +80,12 @@ func run(options Options) error {
 	wg.Add(1)
 	go writeOutputQuery(fileHandle, queryOutputChan)
 
-	wg.Add(WOKRERS)
-	for i := 0; i < WOKRERS; i++ {
+	wg.Add(WORKERS)
+	for i := 0; i < WORKERS; i++ {
 		go worker(opsChan, queryOutputChan)
 	}
 
-	for _, op := range ops {
+	for _, op := range oplogs {
 		opsChan <- op
 	}
 
@@ -124,7 +120,7 @@ func SeparateOperations(oplogs []map[string]interface{}) []Handler {
 			err := insert.Parse(oplog)
 
 			if err != nil {
-				panic(err)
+				panic(errors.Unwrap(err))
 			}
 			handlers = append(handlers, &insert)
 			break
@@ -133,18 +129,18 @@ func SeparateOperations(oplogs []map[string]interface{}) []Handler {
 			err := update.Parse(oplog)
 
 			if err != nil {
-				panic(err)
+				panic(errors.Unwrap(err))
 			}
 			handlers = append(handlers, &update)
 			break
 		case "delete":
-			delete := NewDelete()
-			err := delete.Parse(oplog)
+			deleteOp := NewDelete()
+			err := deleteOp.Parse(oplog)
 
 			if err != nil {
-				panic(err)
+				panic(errors.Unwrap(err))
 			}
-			handlers = append(handlers, &delete)
+			handlers = append(handlers, &deleteOp)
 			break
 		default:
 			panic(fmt.Errorf("unknown oplog type: %s", oplog["op"]))
@@ -154,11 +150,45 @@ func SeparateOperations(oplogs []map[string]interface{}) []Handler {
 	return handlers
 }
 
-func worker(ops chan Handler, output chan string) {
+func worker(ops chan map[string]interface{}, output chan string) {
 	defer wg.Done()
 	for op := range ops {
-		result := op.String()
-		output <- result
+		switch op["op"] {
+		case "insert":
+			insert := NewInsert()
+			err := insert.Parse(op)
+
+			if err != nil {
+				panic(errors.Unwrap(err))
+			}
+			result := insert.String()
+			output <- result
+			break
+		case "update":
+			update := NewUpdate()
+			err := update.Parse(op)
+
+			if err != nil {
+				panic(errors.Unwrap(err))
+			}
+
+			result := update.String()
+			output <- result
+			break
+		case "delete":
+			deleteOp := NewDelete()
+			err := deleteOp.Parse(op)
+
+			if err != nil {
+				panic(errors.Unwrap(err))
+			}
+
+			result := deleteOp.String()
+			output <- result
+			break
+		default:
+			panic(fmt.Errorf("unknown oplog type: %s", op["op"]))
+		}
 	}
 
 }
@@ -168,7 +198,7 @@ func writeOutputQuery(file *os.File, queryChan chan string) {
 	for query := range queryChan {
 		_, err := file.WriteString(query + "\n")
 		if err != nil {
-			panic(err)
+			panic(errors.Unwrap(err))
 		}
 	}
 }

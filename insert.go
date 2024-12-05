@@ -95,7 +95,7 @@ func (i *Insert) String() string {
 	columnsStr := strings.Join(columns, ", ")
 	valuesStr := strings.Join(values, ", ")
 
-	insertStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", i.Table, columnsStr, valuesStr)
+	insertStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", i.Table, columnsStr, valuesStr)
 
 	result := strings.Join(preStatements, "") + insertStr
 
@@ -179,44 +179,55 @@ func getNamespace(data map[string]interface{}) string {
 }
 
 func (i *Insert) CreateSchema() string {
-	_, ok := schemas[i.Database]
 
-	if !ok {
-		schemas[i.Database] = true
+	mutex.Lock()
+	{
 
-		schemaStr := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s;", i.Database)
+		_, ok := schemas[i.Database]
 
-		return schemaStr
+		if !ok {
+			schemas[i.Database] = true
+
+			schemaStr := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s;", i.Database)
+
+			return schemaStr
+		}
 	}
+	mutex.Unlock()
 
 	return ""
 }
 
 func (i *Insert) CreateTable() (string, error) {
 
-	_, ok := tables[i.Table]
+	mutex.Lock()
+	{
 
-	if !ok {
+		_, ok := tables[i.Table]
 
-		tables[i.Table] = Table{Name: i.Table, Schema: make(map[string]bool)}
+		if !ok {
 
-		for _, column := range i.Columns {
-			tables[i.Table].Schema[column.Key] = true
+			tables[i.Table] = Table{Name: i.Table, Schema: make(map[string]bool)}
+
+			for _, column := range i.Columns {
+				tables[i.Table].Schema[column.Key] = true
+			}
+
+			tableStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n", i.Table)
+			columns, err := i.assembleColumns(i.Columns)
+			if err != nil {
+				return "", err
+			}
+			columnsStr := strings.Join(columns, "\n")
+
+			tableStr += columnsStr + "\n"
+
+			tableStr += ");"
+
+			return tableStr, nil
 		}
-
-		tableStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (\n", i.Table)
-		columns, err := i.assembleColumns(i.Columns)
-		if err != nil {
-			return "", err
-		}
-		columnsStr := strings.Join(columns, "\n")
-
-		tableStr += columnsStr + "\n"
-
-		tableStr += ");"
-
-		return tableStr, nil
 	}
+	mutex.Unlock()
 
 	return "", nil
 }
