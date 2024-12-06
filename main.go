@@ -54,12 +54,12 @@ func run(options Options) error {
 	opsChan := make(chan map[string]interface{}, WORKERS*2)
 	queryOutputChan := make(chan string, WORKERS*2)
 
-	if options.Output == "" {
+	if options.Input == "" {
 		return NoFileFound
 	}
 
-	if options.Input == "" {
-		options.Input = "output.sql"
+	if options.Output == "" {
+		options.Output = "output.sql"
 	}
 
 	fileData, err := openFile(os.DirFS("."), options.Input)
